@@ -49,7 +49,8 @@ var express = require('express')
   , actionHistory = require('./routes/actionHistory')
   , versionControl = require('./routes/versionControl')
   , syncIDE = require('./routes/syncIDE')
-  , testcaseHistory = require('./routes/testcaseHistory');
+  , testcaseHistory = require('./routes/testcaseHistory')
+  , locks = require('./routes/locks');
 
 var realFs = require("fs");
 var gracefulFs = require("graceful-fs");
@@ -310,6 +311,11 @@ app.post('/fileupload',auth.auth, fileupload.upload);
 
 //methodFinder
 app.post('/methodFinder',auth.auth, methodFinder.methodFinderPost);
+
+// locks
+app.post('/locks', locks.createLock);
+app.get('/locks/:id', locks.checkLock);
+app.del('/locks/:id', locks.removeLock);
 
 //disable console output for linux to avoid crashes
 if(process.platform != "win32") {
