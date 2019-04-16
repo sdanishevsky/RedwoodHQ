@@ -83,8 +83,8 @@ Ext.define("Redwood.controller.Actions", {
                     var actionData = batch.operations[0].records[0].data;
                     actionData.project = Ext.util.Cookies.get('project');
                     Ext.socket.emit('AddActions', actionData);
+                    me.onEditAction(newAction,false);
                 }});
-                me.onEditAction(newAction,false);
             }
         });
 

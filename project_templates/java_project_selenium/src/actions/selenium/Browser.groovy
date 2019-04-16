@@ -82,7 +82,7 @@ class Browser{
       }
       
     }
-    Driver.manage().window().maximize()
+    if (params."Browser Type" == "Chrome"){Driver.manage().window().maximize()}
     Driver.manage().timeouts().implicitlyWait(10, java.util.concurrent.TimeUnit.SECONDS)
     MainWinHandle = Driver.getWindowHandle()   
     
