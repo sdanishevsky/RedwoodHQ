@@ -314,8 +314,8 @@ app.post('/methodFinder',auth.auth, methodFinder.methodFinderPost);
 
 // locks
 app.post('/locks', locks.createLock);
-app.get('/locks/:id', locks.checkLock);
-app.del('/locks/:id', locks.removeLock);
+app.get('/locks', locks.checkLock);
+app.del('/locks', locks.removeLock);
 
 //disable console output for linux to avoid crashes
 if(process.platform != "win32") {
