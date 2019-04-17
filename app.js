@@ -313,9 +313,9 @@ app.post('/fileupload',auth.auth, fileupload.upload);
 app.post('/methodFinder',auth.auth, methodFinder.methodFinderPost);
 
 // locks
-app.post('/locks', locks.createLock);
-app.get('/locks', locks.checkLock);
-app.del('/locks', locks.removeLock);
+app.post('/locks', auth.auth, locks.createLock);
+app.get('/locks', auth.auth, locks.checkLock);
+app.del('/locks', auth.auth, locks.removeLock);
 
 //disable console output for linux to avoid crashes
 if(process.platform != "win32") {
