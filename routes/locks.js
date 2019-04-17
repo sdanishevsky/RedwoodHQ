@@ -86,5 +86,35 @@ exports.removeLock = function(req, res) {
 };
 
 exports.checkLock = function(req, res) {
-    
+    const app = require('../common');
+    const db = app.getDB();
+    const data = {
+        id: req.query.id,
+        type: req.query.type
+    };
+    const username = req.cookies.username;
+    res.contentType('json');
+
+    // Validating data
+    if (!isValidInput(data)) {
+        res.status(400).json({ success: false });
+        return;
+    }
+
+    db.collection(LOCKS_COLLECTION, function(err, collection) {
+        // Finding lock
+        collection.findOne(data, function(findErr, result) {
+            var locked = false;
+            if (findErr) {
+                console.warn(findErr.message);
+            }
+            if (result && result.username !== username) {
+                locked = true;
+            }
+            res.json({
+                success: true,
+                locked
+            });
+        });
+    });
 };
