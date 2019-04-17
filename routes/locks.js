@@ -66,11 +66,11 @@ exports.removeLock = function(req, res) {
         }, function(findErr, result) {
             if (findErr) {
                 console.warn(findErr.message);
-                res.status(404).json({ success: false });
+                res.status(500).json({ success: false });
                 return;
             }
             if (!result) {
-                res.status(404).json({ success: false });
+                res.json({ success: true });
                 return;
             }
             // Deleting lock
