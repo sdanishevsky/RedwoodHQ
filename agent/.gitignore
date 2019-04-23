@@ -1,5 +1,6 @@
 node_modules
 bin
+lib
 executionfiles
 Java
 agent.pid
