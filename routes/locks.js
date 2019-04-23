@@ -15,6 +15,7 @@ exports.createLock = function(req, res) {
     const app = require('../common');
     const db = app.getDB();
     const data = req.body;
+    const username = req.cookies.username || null;
     res.contentType('json');
 
     // Validating data
@@ -22,22 +23,38 @@ exports.createLock = function(req, res) {
         res.status(400).json({ success: false });
         return;
     }
-    data.username = req.cookies.username;
-    data._id = new ObjectID();
     
-    // Adding new lock into the database
     db.collection(LOCKS_COLLECTION, function(err, collection) {
         collection.ensureIndex({ type: 1, id: 1 }, { unique: true }, function(indexErr) {
-            if (indexErr) {
-                console.warn(indexErr.message);
-            }
-            collection.insert(data, function(insertErr) {
-                if (insertErr) {
-                    console.warn(insertErr.message);
+            if (indexErr) { console.warn(indexErr.message); }
+            // Checking if lock is already exists
+            collection.findOne(data, function(findErr, result) {
+                if (findErr) { console.warn(findErr.message); }
+                if (result) {
+                    if (result.username === username) {
+                        res.json({
+                            success: true,
+                            isLocked: false
+                        });
+                    } else {
+                        res.json({
+                            success: true,
+                            isLocked: true,
+                            lockedBy: result.username
+                        });
+                    }
+                    return;
                 }
-                res.json({
-                    success: !insertErr,
-                    lock: data
+                // Adding new lock into the database
+                data.username = username;
+                data.createdAt = new Date().toISOString();
+                data._id = new ObjectID();
+                collection.insert(data, function(insertErr) {
+                    if (insertErr) { console.warn(insertErr.message); }
+                    res.json({
+                        success: !insertErr,
+                        isLocked: false
+                    });
                 });
             });
         });
@@ -80,40 +97,6 @@ exports.removeLock = function(req, res) {
                     return;
                 }
                 res.json({ success: true });
-            });
-        });
-    });
-};
-
-exports.checkLock = function(req, res) {
-    const app = require('../common');
-    const db = app.getDB();
-    const data = {
-        id: req.query.id,
-        type: req.query.type
-    };
-    const username = req.cookies.username;
-    res.contentType('json');
-
-    // Validating data
-    if (!isValidInput(data)) {
-        res.status(400).json({ success: false });
-        return;
-    }
-
-    db.collection(LOCKS_COLLECTION, function(err, collection) {
-        // Finding lock
-        collection.findOne(data, function(findErr, result) {
-            var locked = false;
-            if (findErr) {
-                console.warn(findErr.message);
-            }
-            if (result && result.username !== username) {
-                locked = true;
-            }
-            res.json({
-                success: true,
-                locked
             });
         });
     });

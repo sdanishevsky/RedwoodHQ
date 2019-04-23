@@ -314,7 +314,6 @@ app.post('/methodFinder',auth.auth, methodFinder.methodFinderPost);
 
 // locks
 app.post('/locks', auth.auth, locks.createLock);
-app.get('/locks', auth.auth, locks.checkLock);
 app.del('/locks', auth.auth, locks.removeLock);
 
 //disable console output for linux to avoid crashes
