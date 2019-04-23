@@ -6,3 +6,5 @@ Java
 agent.pid
 agent.vnc.pid
 cache
+ImageAutomation.jar
+LookingGlass.jar
