@@ -284,6 +284,7 @@ Ext.define('Redwood.view.ActionView', {
     //forceFit: true,
     myData:[],
     dataRecord: null,
+    isLocked: false,
     dirty: false,
     loadingData: false,
 
@@ -298,7 +299,12 @@ Ext.define('Redwood.view.ActionView', {
             }
         };
         me.on("beforeclose",function(panel){
+            var editor = this.up('actions');
+            editor.fireEvent('removeActionLock');
             if (this.dirty == true && Ext.util.Cookies.get('role') != "Test Designer"){
+                if (this.isLocked) {
+                    return true;
+                }
                 var me = this;
                 Ext.Msg.show({
                     title:'Save Changes?',
@@ -310,7 +316,6 @@ Ext.define('Redwood.view.ActionView', {
                             me.destroy();
                         }
                         if (id == "yes"){
-                            var editor = me.up('actions');
                             editor.fireEvent('saveAction');
                             me.destroy();
                         }
@@ -331,6 +336,7 @@ Ext.define('Redwood.view.ActionView', {
                 //pack  : 'start',
                 //width: 1500,
                 collapsible: true,
+                disabled: me.isLocked,
                 defaults: {
                     flex: 1
                 },
@@ -452,6 +458,7 @@ Ext.define('Redwood.view.ActionView', {
                 hidden:false,
                 collapsible: true,
                 collapsed:true,
+                disabled: me.isLocked,
                 layout: "fit",
                 defaults: {
                     flex: 1
@@ -469,6 +476,7 @@ Ext.define('Redwood.view.ActionView', {
                 hidden:false,
                 collapsible: true,
                 collapsed:true,
+                disabled: me.isLocked,
                 //layout: "column",
                 defaults: {
                     flex: 1
@@ -496,6 +504,7 @@ Ext.define('Redwood.view.ActionView', {
                         xtype:"actionparamgrid",
                         flex: 1,
                         itemId: "params",
+                        disabled: me.isLocked,
                         padding: "0 10 10 2"
 
                     },
@@ -514,6 +523,7 @@ Ext.define('Redwood.view.ActionView', {
                 //maxWidth: 1672,
 
                 collapsible: true,
+                disabled: me.isLocked,
                 itemId:"actionCollectionFiledSet",
                 items:[
                     {
@@ -537,6 +547,7 @@ Ext.define('Redwood.view.ActionView', {
             {
                 xtype: "scriptPickerView",
                 hidden: false,
+                disabled: me.isLocked,
                 width: 955,
                 listeners: {
                     change: function(){

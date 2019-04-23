@@ -38,7 +38,8 @@ Ext.define("Redwood.controller.Actions", {
                 saveAction: this.onSaveAction,
                 editAction: this.onEditAction,
                 deleteAction: this.onDeleteAction,
-                cloneAction: this.onCloneAction
+                cloneAction: this.onCloneAction,
+                removeActionLock: this.onRemoveActionLock
             }
         });
     },
@@ -97,6 +98,9 @@ Ext.define("Redwood.controller.Actions", {
             return;
         }
         if (actionView.title === "[New Action]"){
+            return;
+        }
+        if (actionView.isLocked) {
             return;
         }
         if(Ext.util.Cookies.get('role') == "Test Designer"){
@@ -175,16 +179,32 @@ Ext.define("Redwood.controller.Actions", {
                 }
             });
         }
-        if (foundIndex == -1){
+        if (foundIndex == -1) {
+            // Make request to load the action
             Ext.Ajax.request({
-                    url: "/action/" + record.get("_id"),
-                    method: "GET",
-                    success: function (response) {
-                        var obj = Ext.decode(response.responseText);
-                        if (obj.error) {
-                            Ext.Msg.alert('Error', obj.error);
-                        }
-                        else {
+                url: "/action/" + record.get("_id"),
+                method: "GET",
+                success: function (response) {
+                    var obj = Ext.decode(response.responseText);
+                    if (obj.error) {
+                        Ext.Msg.alert('Error', obj.error);
+                        return;
+                    }
+
+                    // Make request to create lock
+                    Ext.Ajax.request({
+                        url: "/locks",
+                        method: "POST",
+                        jsonData: JSON.stringify({
+                            id: record.get("_id"),
+                            type: "action"
+                        }),
+                        success: function(lockResponse) {
+                            var lockObj = Ext.decode(lockResponse.responseText);
+                            if (lockObj.isLocked) {
+                                Ext.Msg.alert('Warning', "This action is locked by user '" + lockObj.lockedBy + "'");
+                            }
+
                             record.set("name",obj.action.name);
                             record.set("description",obj.action.description);
                             record.set("status",obj.action.status);
@@ -202,6 +222,7 @@ Ext.define("Redwood.controller.Actions", {
                                 title:name,
                                 closable:true,
                                 dataRecord:record,
+                                isLocked: lockObj.isLocked,
                                 itemId:name
                             });
 
@@ -218,10 +239,16 @@ Ext.define("Redwood.controller.Actions", {
                                 tab.down("#actionDetails").collapse();
                             }
                             me.tabPanel.setActiveTab(foundIndex);
+                        },
+                        failure: function() {
+                            Ext.Msg.alert('Error', 'Failed to lock the action');
                         }
-                    }
+                    });
+                },
+                failure: function() {
+                    Ext.Msg.alert('Error', 'Failed to load action');
                 }
-            );
+            });
         }
         else {
             this.tabPanel.setActiveTab(foundIndex);
@@ -236,6 +263,9 @@ Ext.define("Redwood.controller.Actions", {
             return;
         }
         if (actionView.validate(this.getStore('Actions')) === false){
+            return;
+        }
+        if (actionView.isLocked) {
             return;
         }
         var lastScrollPos = actionView.getEl().dom.children[0].scrollTop;
@@ -287,9 +317,28 @@ Ext.define("Redwood.controller.Actions", {
         this.actionsPanel = Ext.ComponentQuery.query('actions')[0];
         this.tabPanel = Ext.ComponentQuery.query('#actionstab',this.actionsPanel)[0];
 
+    },
+
+
+    onRemoveActionLock: function() {
+        var actionView = this.tabPanel.getActiveTab();
+        if (actionView === null || actionView.dataRecord === null) {
+            return;
+        }
+        if (!actionView.dataRecord.get('_id')) {
+            return;
+        }
+        Ext.Ajax.request({
+            url: "/locks",
+            method: "DELETE",
+            jsonData: JSON.stringify({
+                id: actionView.dataRecord.get('_id'),
+                type: 'action'
+            }),
+            failure: function() {
+                Ext.Msg.alert('Error', 'Failed to remove action lock');
+            }
+        });
     }
-
-
-
 
 });
