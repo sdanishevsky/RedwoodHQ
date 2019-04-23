@@ -40,6 +40,7 @@ Ext.define("Redwood.controller.TestCases", {
                 saveTestCase: this.onSaveTestCase,
                 editTestCase: this.onEditTestCase,
                 deleteTestCase: this.onDeleteTestCase,
+                removeTestCaseLock: this.onRemoveTestCaseLock,
                 cloneTestCase: this.onCloneTestCase,
                 testCaseToCode: this.onTestCaseToCode
             }
@@ -329,6 +330,30 @@ Ext.define("Redwood.controller.TestCases", {
         testcaseView.setTitle(testcase.name);
         testcaseView.dirty = false;
         testcaseView.getEl().dom.children[0].scrollTop = lastScrollPos;
+    },
+
+    onRemoveTestCaseLock: function() {
+        var testcaseView = this.tabPanel.getActiveTab();
+        if (testcaseView === null) {
+            return;
+        }
+        if (testcaseView.dataRecord !== null && testcaseView.dataRecord.get("history") == true) {
+            return;
+        }
+        if (!testcaseView.dataRecord.get('_id')) {
+            return;
+        }
+        Ext.Ajax.request({
+            url: "/locks",
+            method: "DELETE",
+            jsonData: JSON.stringify({
+                id: testcaseView.dataRecord.get('_id'),
+                type: 'testcase'
+            }),
+            failure: function() {
+                Ext.Msg.alert('Error', 'Failed to remove test case lock');
+            }
+        });
     },
 
     onNewTestCase: function(){

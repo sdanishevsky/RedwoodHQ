@@ -27,6 +27,8 @@ Ext.define('Redwood.view.TestCaseView', {
             }
         };
         me.on("beforeclose",function(panel){
+            var editor = this.up('testcases');
+            editor.fireEvent('removeTestCaseLock');
             if (this.dirty == true){
                 if (this.isLocked) {
                     return true;
@@ -42,7 +44,6 @@ Ext.define('Redwood.view.TestCaseView', {
                             me.destroy();
                         }
                         if (id == "yes"){
-                            var editor = me.up('testcases');
                             editor.fireEvent('saveTestCase');
                             me.destroy();
                         }
