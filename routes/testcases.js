@@ -480,6 +480,23 @@ function GetTestCases(db,query,callback){
 function GetTestCaseDetails(db,query,callback){
     db.collection('testcases', function(err, collection) {
         collection.findOne(query, {}, function(err, testcase) {
+            //if test case is not found check history
+            if(testcase == null){
+                GetTestCaseHistory(db,query,function(testcasehistory){
+                    callback(testcasehistory);
+                })
+            }
+            else{
+                callback(testcase);
+            }
+        })
+    })
+}
+
+function GetTestCaseHistory(db,query,callback){
+    db.collection('testcaseshistory', function(err, collection) {
+        collection.findOne(query, {}, function(err, testcase) {
+            //if test case is not found check history
             callback(testcase);
         })
     })

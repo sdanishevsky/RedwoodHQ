@@ -1,6 +1,43 @@
 var realtime = require("./realtime");
 var ObjectID = require('mongodb').ObjectID;
 
+exports.usedIn = function(req,res){
+    var app =  require('../common');
+    var db = app.getDB();
+    var id = req.params.id;
+    //var id = new ObjectID(req.params.id);
+
+    var usedIn = [];
+    var query = {type:"collection",collection:{$elemMatch:{actionid:id}}};
+    usedInObject(db,"actions","action",query,function(usedInActions){
+        usedIn = usedInActions;
+        query = {$or:[{afterState:{$elemMatch:{actionid:id}}},{type:"collection",collection:{$elemMatch:{actionid:id}}}]};
+        usedInObject(db,"testcases","testcase",query,function(usedInTestCases){
+            usedIn = usedIn.concat(usedInTestCases);
+            res.json({
+                usedIn: usedIn
+            });
+        });
+    });
+};
+
+
+function usedInObject(db,collection,type,query,callback){
+    var usedIn = [];
+    db.collection(collection, function(err, collection) {
+        collection.find(query, {_id:1,tag:1,name:1}, function(err, cursor) {
+            cursor.each(function(err, action) {
+                if(action == null) {
+                    callback(usedIn);
+                    return;
+                }
+                action.type = type;
+                usedIn.push(action);
+            });
+        })
+    })
+}
+
 exports.actionsPut = function(req, res){
     var app =  require('../common');
     var db = app.getDB();
@@ -147,8 +184,24 @@ function GetActions(db,query,callback){
 
 function GetActionDetails(db,query,callback){
     db.collection('actions', function(err, collection) {
-        collection.findOne(query, {}, function(err, testcase) {
-            callback(testcase);
+        collection.findOne(query, {}, function(err, action) {
+            if(action == null){
+                GetActionHistory(db,query,function(actionHistory){
+                    callback(actionHistory)
+                })
+            }
+            else{
+                callback(action);
+            }
+        })
+    })
+}
+
+
+function GetActionHistory(db,query,callback){
+    db.collection('actionshistory', function(err, collection) {
+        collection.findOne(query, {}, function(err, action) {
+            callback(action);
         })
     })
 }

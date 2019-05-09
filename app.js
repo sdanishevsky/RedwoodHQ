@@ -49,7 +49,8 @@ var express = require('express')
   , actionHistory = require('./routes/actionHistory')
   , versionControl = require('./routes/versionControl')
   , syncIDE = require('./routes/syncIDE')
-  , testcaseHistory = require('./routes/testcaseHistory');
+  , testcaseHistory = require('./routes/testcaseHistory')
+  , locks = require('./routes/locks');
 
 var realFs = require("fs");
 var gracefulFs = require("graceful-fs");
@@ -195,6 +196,7 @@ app.put('/actions/:id',auth.auth, actions.actionsPut);
 app.post('/actions',auth.auth, actions.actionsPost);
 app.del('/actions/:id',auth.auth, actions.actionsDelete);
 app.get('/action/:id',auth.auth, actions.getActionDetails);
+app.get('/action/usedin/:id',auth.auth, actions.usedIn);
 
 //actionTags
 app.get('/actiontags',auth.auth, actiontags.actionTagsGet);
@@ -309,6 +311,10 @@ app.post('/fileupload',auth.auth, fileupload.upload);
 
 //methodFinder
 app.post('/methodFinder',auth.auth, methodFinder.methodFinderPost);
+
+// locks
+app.post('/locks', auth.auth, locks.createLock);
+app.del('/locks', auth.auth, locks.removeLock);
 
 //disable console output for linux to avoid crashes
 if(process.platform != "win32") {

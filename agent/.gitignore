@@ -1,7 +1,10 @@
 node_modules
 bin
+lib
 executionfiles
 Java
 agent.pid
 agent.vnc.pid
 cache
+ImageAutomation.jar
+LookingGlass.jar

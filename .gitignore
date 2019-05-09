@@ -1,5 +1,9 @@
 node_modules
 vendor
+data
+logs
+app.pid
+nohup.out
 .idea
 npm-debug.log
 nodegit

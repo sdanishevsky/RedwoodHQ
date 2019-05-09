@@ -40,6 +40,7 @@ Ext.define("Redwood.controller.TestCases", {
                 saveTestCase: this.onSaveTestCase,
                 editTestCase: this.onEditTestCase,
                 deleteTestCase: this.onDeleteTestCase,
+                removeTestCaseLock: this.onRemoveTestCaseLock,
                 cloneTestCase: this.onCloneTestCase,
                 testCaseToCode: this.onTestCaseToCode
             }
@@ -57,6 +58,9 @@ Ext.define("Redwood.controller.TestCases", {
         }
 
         if (testcaseView.xtype == "codeeditorpanel"){
+            return;
+        }
+        if (testcaseView.isLocked) {
             return;
         }
 
@@ -107,6 +111,9 @@ Ext.define("Redwood.controller.TestCases", {
         var testcaseView = this.tabPanel.getActiveTab();
         var me = this;
         if (testcaseView === null){
+            return;
+        }
+        if (testcaseView.isLocked) {
             return;
         }
         var recorderWindow = new Redwood.view.RecorderView({type:"testcase"});
@@ -161,6 +168,9 @@ Ext.define("Redwood.controller.TestCases", {
         if (testcaseView.title === "[New TestCase]"){
             return;
         }
+        if (testcaseView.isLocked) {
+            return;
+        }
         Ext.Msg.show({
             title:'Delete Confirmation',
             msg: "Are you sure you want to delete '"+ testcaseView.title + "' test case?" ,
@@ -197,55 +207,78 @@ Ext.define("Redwood.controller.TestCases", {
                 }
             });
         }
-        if (foundIndex == -1){
+        if (foundIndex == -1) {
+            // Make request to load the test case
             Ext.Ajax.request({
                 url:"/testcase/"+record.get("_id"),
                 method:"GET",
                 success: function(response) {
                     var obj = Ext.decode(response.responseText);
-                    if(obj.error){
+                    if (obj.error) {
                         Ext.Msg.alert('Error', obj.error);
+                        return;
                     }
-                    else{
-                        record.set("collection",obj.testcase.collection);
-                        record.set("name",obj.testcase.name);
-                        record.set("description",obj.testcase.description);
-                        record.set("status",obj.testcase.status);
-                        record.set("tag",obj.testcase.tag);
-                        record.set("type",obj.testcase.type);
-                        record.set("afterState",obj.testcase.afterState);
-                        record.set("script",obj.testcase.script);
-                        record.set("scriptLang",obj.testcase.scriptLang);
-                        if (obj.testcase.tcData){
-                            record.set("tcData",obj.testcase.tcData);
-                        }
-                        record.dirty = false;
-                        var tab = Ext.create('Redwood.view.TestCaseView',{
-                            title:name,
-                            closable:true,
-                            dataRecord:record,
-                            itemId:name
-                        });
 
-                        me.tabPanel.add(tab);
+                    // Make request to create lock
+                    Ext.Ajax.request({
+                        url: "/locks",
+                        method: "POST",
+                        jsonData: JSON.stringify({
+                            id: record.get("_id"),
+                            type: "testcase"
+                        }),
+                        success: function(lockResponse) {
+                            var lockObj = Ext.decode(lockResponse.responseText);
+                            if (lockObj.isLocked) {
+                                Ext.Msg.alert('Warning', "This testcase is locked by user '" + lockObj.lockedBy + "'");
+                            }
 
-                        //foundIndex = this.tabPanel.items.findIndex("title",new RegExp("^"+record.get("name")+"$"),0,false,true);
-                        foundIndex = me.tabPanel.items.findIndexBy(function(item,key){
-                            if(key == name){
-                                return true;
+                            record.set("collection",obj.testcase.collection);
+                            record.set("name",obj.testcase.name);
+                            record.set("description",obj.testcase.description);
+                            record.set("status",obj.testcase.status);
+                            record.set("tag",obj.testcase.tag);
+                            record.set("type",obj.testcase.type);
+                            record.set("afterState",obj.testcase.afterState);
+                            record.set("script",obj.testcase.script);
+                            record.set("scriptLang",obj.testcase.scriptLang);
+                            if (obj.testcase.tcData){
+                                record.set("tcData",obj.testcase.tcData);
                             }
-                            else{
-                                return false;
+                            record.dirty = false;
+                            var tab = Ext.create('Redwood.view.TestCaseView',{
+                                title:name,
+                                closable:true,
+                                dataRecord:record,
+                                isLocked: lockObj.isLocked,
+                                itemId:name
+                            });
+
+                            me.tabPanel.add(tab);
+
+                            //foundIndex = this.tabPanel.items.findIndex("title",new RegExp("^"+record.get("name")+"$"),0,false,true);
+                            foundIndex = me.tabPanel.items.findIndexBy(function(item,key){
+                                if(key == name){
+                                    return true;
+                                }
+                                else{
+                                    return false;
+                                }
+                            });
+                            if(!collapse == false){
+                                tab.down("#testcaseDetails").collapse();
                             }
-                        });
-                        if(!collapse == false){
-                            tab.down("#testcaseDetails").collapse();
+                            me.tabPanel.setActiveTab(foundIndex);
+                        },
+                        failure: function() {
+                            Ext.Msg.alert('Error', 'Failed to lock the test case');
                         }
-                        me.tabPanel.setActiveTab(foundIndex);
-                    }
+                    });
+                },
+                failure: function() {
+                    Ext.Msg.alert('Error', 'Failed to load test case');
                 }
             });
-
         }
         else{
             this.tabPanel.setActiveTab(foundIndex);
@@ -261,6 +294,9 @@ Ext.define("Redwood.controller.TestCases", {
             return;
         }
         if (testcaseView.dataRecord !== null && testcaseView.dataRecord.get("history") == true){
+            return;
+        }
+        if (testcaseView.isLocked) {
             return;
         }
         var lastScrollPos = testcaseView.getEl().dom.children[0].scrollTop;
@@ -294,6 +330,30 @@ Ext.define("Redwood.controller.TestCases", {
         testcaseView.setTitle(testcase.name);
         testcaseView.dirty = false;
         testcaseView.getEl().dom.children[0].scrollTop = lastScrollPos;
+    },
+
+    onRemoveTestCaseLock: function() {
+        var testcaseView = this.tabPanel.getActiveTab();
+        if (testcaseView === null) {
+            return;
+        }
+        if (testcaseView.dataRecord !== null && testcaseView.dataRecord.get("history") == true) {
+            return;
+        }
+        if (!testcaseView.dataRecord.get('_id')) {
+            return;
+        }
+        Ext.Ajax.request({
+            url: "/locks",
+            method: "DELETE",
+            jsonData: JSON.stringify({
+                id: testcaseView.dataRecord.get('_id'),
+                type: 'testcase'
+            }),
+            failure: function() {
+                Ext.Msg.alert('Error', 'Failed to remove test case lock');
+            }
+        });
     },
 
     onNewTestCase: function(){

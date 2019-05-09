@@ -284,6 +284,7 @@ Ext.define('Redwood.view.ActionView', {
     //forceFit: true,
     myData:[],
     dataRecord: null,
+    isLocked: false,
     dirty: false,
     loadingData: false,
 
@@ -298,7 +299,12 @@ Ext.define('Redwood.view.ActionView', {
             }
         };
         me.on("beforeclose",function(panel){
+            var editor = this.up('actions');
+            editor.fireEvent('removeActionLock');
             if (this.dirty == true && Ext.util.Cookies.get('role') != "Test Designer"){
+                if (this.isLocked) {
+                    return true;
+                }
                 var me = this;
                 Ext.Msg.show({
                     title:'Save Changes?',
@@ -310,7 +316,6 @@ Ext.define('Redwood.view.ActionView', {
                             me.destroy();
                         }
                         if (id == "yes"){
-                            var editor = me.up('actions');
                             editor.fireEvent('saveAction');
                             me.destroy();
                         }
@@ -331,6 +336,7 @@ Ext.define('Redwood.view.ActionView', {
                 //pack  : 'start',
                 //width: 1500,
                 collapsible: true,
+                disabled: me.isLocked,
                 defaults: {
                     flex: 1
                 },
@@ -452,6 +458,7 @@ Ext.define('Redwood.view.ActionView', {
                 hidden:false,
                 collapsible: true,
                 collapsed:true,
+                disabled: me.isLocked,
                 layout: "fit",
                 defaults: {
                     flex: 1
@@ -469,6 +476,7 @@ Ext.define('Redwood.view.ActionView', {
                 hidden:false,
                 collapsible: true,
                 collapsed:true,
+                disabled: me.isLocked,
                 //layout: "column",
                 defaults: {
                     flex: 1
@@ -496,6 +504,7 @@ Ext.define('Redwood.view.ActionView', {
                         xtype:"actionparamgrid",
                         flex: 1,
                         itemId: "params",
+                        disabled: me.isLocked,
                         padding: "0 10 10 2"
 
                     },
@@ -514,6 +523,7 @@ Ext.define('Redwood.view.ActionView', {
                 //maxWidth: 1672,
 
                 collapsible: true,
+                disabled: me.isLocked,
                 itemId:"actionCollectionFiledSet",
                 items:[
                     {
@@ -537,6 +547,7 @@ Ext.define('Redwood.view.ActionView', {
             {
                 xtype: "scriptPickerView",
                 hidden: false,
+                disabled: me.isLocked,
                 width: 955,
                 listeners: {
                     change: function(){
@@ -658,58 +669,16 @@ Ext.define('Redwood.view.ActionView', {
                     me.down("#actionHistory").items.add(me.historyGrid);
                 }
 
-                //in what test cases this action is used
-                var testcases = [];
-                var testcasesStore = Ext.data.StoreManager.lookup('TestCases');
-                testcasesStore.query("_id",/.*/).each(function(testcase){
-                    if (testcase.get("type") == "collection"){
-                        for(var i=0;i<testcase.get("collection").length;i++){
-                            if(testcase.get("collection")[i].actionid == me.dataRecord.get("_id")){
-                                testcases.push(testcase);
-                                return;
-                            }
-                        }
-                    }
-                    if(testcase.get("afterState")){
-                        if(Array.isArray(testcase.get("afterState"))){
-                            for(var i2=0;i2<testcase.get("afterState").length;i2++){
-                                if(testcase.get("afterState")[i2].actionid == me.dataRecord.get("_id")){
-                                    testcases.push(testcase);
-                                    return
-                                }
-                            }
-                        }
-                        else {
-                            if(testcase.get("afterState") == me.dataRecord.get("_id")){
-                                testcases.push(testcase);
-                            }
-                        }
-                    }
-                });
-
-
-                //in what actions this action is used
-                var actionsStore = Ext.data.StoreManager.lookup('Actions');
-                actionsStore.query("_id",/.*/).each(function(action){
-                    if (action.get("type") == "collection"){
-                        for(var i=0;i<action.get("collection").length;i++){
-                            if(action.get("collection")[i].actionid == me.dataRecord.get("_id")){
-                                testcases.push(action);
-                                break;
-                            }
-                        }
-                    }
-                });
-
                 me.inTestCasesStore =  Ext.create('Ext.data.Store', {
                     storeId: "InTestCasesStore"+me.dataRecord.get("_id"),
                     idProperty: '_id',
                     fields: [
                         {name: 'name',     type: 'string'},
+                        {name: 'type',     type: 'string'},
                         {name: 'tag',     type: 'array'},
                         {name: '_id',     type: 'string'}
                     ],
-                    data:testcases
+                    data:[]
                 });
 
                 me.inTestCasesGrid = Ext.create('Ext.grid.Panel', {
@@ -744,7 +713,8 @@ Ext.define('Redwood.view.ActionView', {
                             flex: 1,
                             renderer: function(value,meta,record){
                                 //meta.tdCls = 'x-redwood-results-cell';
-                                if(record.$className == "Redwood.model.TestCases"){
+                                //if(record.$className == "Redwood.model.TestCases"){
+                                if(record.get("type") == "testcase"){
                                     return "<a style= 'color:font-weight:bold;blue;' href='javascript:openTestCase(&quot;"+ record.get("_id") +"&quot;)'>"+record.get("name")+" (Test Case)</a>"
                                 }
                                 else{
@@ -757,6 +727,17 @@ Ext.define('Redwood.view.ActionView', {
                 });
                 me.down("#inTestCases").items.add(me.inTestCasesGrid);
 
+                Ext.Ajax.request({
+                    url: "/action/usedin/" + me.dataRecord.get("_id"),
+                    method: "GET",
+                    success: function (response) {
+                        var obj = Ext.decode(response.responseText);
+                        if (obj.error) {
+                            Ext.Msg.alert('Error', obj.error);
+                        }
+                        me.inTestCasesStore.loadData(obj.usedIn);
+                    }
+                });
 
 
             }

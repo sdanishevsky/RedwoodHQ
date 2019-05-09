@@ -9,6 +9,7 @@ Ext.define('Redwood.view.TestCaseView', {
     bodyPadding: 5,
     myData:[],
     dataRecord: null,
+    isLocked: false,
     dirty: false,
     loadingData: false,
 
@@ -26,7 +27,12 @@ Ext.define('Redwood.view.TestCaseView', {
             }
         };
         me.on("beforeclose",function(panel){
+            var editor = this.up('testcases');
+            editor.fireEvent('removeTestCaseLock');
             if (this.dirty == true){
+                if (this.isLocked) {
+                    return true;
+                }
                 var me = this;
                 Ext.Msg.show({
                     title:'Save Changes?',
@@ -38,7 +44,6 @@ Ext.define('Redwood.view.TestCaseView', {
                             me.destroy();
                         }
                         if (id == "yes"){
-                            var editor = me.up('testcases');
                             editor.fireEvent('saveTestCase');
                             me.destroy();
                         }
@@ -47,8 +52,6 @@ Ext.define('Redwood.view.TestCaseView', {
                 return false;
             }
         });
-
-
 
         /*
         var descResizer = Ext.create('Ext.resizer.Resizer', {
@@ -70,6 +73,7 @@ Ext.define('Redwood.view.TestCaseView', {
                 itemId:"testcaseDetails",
                 flex: 1,
                 collapsible: true,
+                disabled: me.isLocked,
                 defaults: {
                     flex: 1
                 },
@@ -232,6 +236,7 @@ Ext.define('Redwood.view.TestCaseView', {
                 hidden:false,
                 collapsible: true,
                 collapsed:true,
+                disabled: me.isLocked,
                 layout: "fit",
                 defaults: {
                     flex: 1
@@ -248,6 +253,7 @@ Ext.define('Redwood.view.TestCaseView', {
                 flex: 1,
                 hidden:true,
                 collapsible: true,
+                disabled: me.isLocked,
                 //layout: "column",
                 defaults: {
                     flex: 1
@@ -259,12 +265,12 @@ Ext.define('Redwood.view.TestCaseView', {
                 hidden: false,
                 title: 'After State',
                 flex: 1,
+                collapsible: true,
                 collapsed:true,
+                disabled: me.isLocked,
                 layout:"hbox",
                 //height:400,
                 constrainAlign: true,
-
-                collapsible: true,
                 itemId:"afterStateFiledSet",
                 items:[
                     {
@@ -291,6 +297,7 @@ Ext.define('Redwood.view.TestCaseView', {
                 constrainAlign: true,
 
                 collapsible: true,
+                disabled: me.isLocked,
                 itemId:"actionCollectionFiledSet",
                 items:[
                     {
@@ -313,6 +320,7 @@ Ext.define('Redwood.view.TestCaseView', {
                 flex: 1,
                 hidden:false,
                 collapsible: true,
+                disabled: me.isLocked,
                 //layout: "column",
                 defaults: {
                     flex: 1
