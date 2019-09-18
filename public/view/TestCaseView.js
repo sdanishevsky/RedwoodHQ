@@ -28,7 +28,27 @@ Ext.define('Redwood.view.TestCaseView', {
         };
         me.on("beforeclose",function(panel){
             var editor = this.up('testcases');
-            editor.fireEvent('removeTestCaseLock');
+
+            var testId = panel.dataRecord && panel.dataRecord.get('_id') ? panel.dataRecord.get('_id') : null;
+            var unlockTest = function() {
+                if (!testId) {
+                    return;
+                }
+                Ext.Ajax.request({
+                    url: "/locks",
+                    method: "DELETE",
+                    jsonData: JSON.stringify({
+                        id: testId,
+                        type: 'testcase'
+                    }),
+                    failure: function() {
+                        Ext.Msg.alert('Error', 'Failed to remove test case lock');
+                    }
+                });
+            };
+
+            unlockTest();
+
             if (this.dirty == true){
                 if (this.isLocked) {
                     return true;

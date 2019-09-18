@@ -300,7 +300,27 @@ Ext.define('Redwood.view.ActionView', {
         };
         me.on("beforeclose",function(panel){
             var editor = this.up('actions');
-            editor.fireEvent('removeActionLock');
+            
+            var actionId = panel.dataRecord && panel.dataRecord.get('_id') ? panel.dataRecord.get('_id') : null;
+            var unlockAction = function() {
+                if (!actionId) {
+                    return;
+                }
+                Ext.Ajax.request({
+                    url: "/locks",
+                    method: "DELETE",
+                    jsonData: JSON.stringify({
+                        id: actionId,
+                        type: 'action'
+                    }),
+                    failure: function() {
+                        Ext.Msg.alert('Error', 'Failed to remove action lock');
+                    }
+                });
+            };
+
+            unlockAction();
+
             if (this.dirty == true && Ext.util.Cookies.get('role') != "Test Designer"){
                 if (this.isLocked) {
                     return true;
