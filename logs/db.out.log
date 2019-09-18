@@ -1,0 +1,14 @@
+2019-04-16T15:04:01.099-0600 I CONTROL  [initandlisten] MongoDB starting : pid=4069 port=27017 dbpath=/Users/stas/Projects/RedwoodHQ/data/db 64-bit host=MacBook-Pro.local
+2019-04-16T15:04:01.100-0600 I CONTROL  [initandlisten] db version v3.2.10
+2019-04-16T15:04:01.100-0600 I CONTROL  [initandlisten] git version: 79d9b3ab5ce20f51c272b4411202710a082d0317
+2019-04-16T15:04:01.100-0600 I CONTROL  [initandlisten] OpenSSL version: OpenSSL 0.9.8zh 14 Jan 2016
+2019-04-16T15:04:01.100-0600 I CONTROL  [initandlisten] allocator: system
+2019-04-16T15:04:01.100-0600 I CONTROL  [initandlisten] modules: none
+2019-04-16T15:04:01.100-0600 I CONTROL  [initandlisten] build environment:
+2019-04-16T15:04:01.100-0600 I CONTROL  [initandlisten]     distarch: x86_64
+2019-04-16T15:04:01.100-0600 I CONTROL  [initandlisten]     target_arch: x86_64
+2019-04-16T15:04:01.100-0600 I CONTROL  [initandlisten] options: { net: { port: 27017 }, storage: { dbPath: "/Users/stas/Projects/RedwoodHQ/data/db", journal: { enabled: true } } }
+2019-04-16T15:04:01.100-0600 E NETWORK  [initandlisten] listen(): bind() failed errno:48 Address already in use for socket: 0.0.0.0:27017
+2019-04-16T15:04:01.100-0600 E NETWORK  [initandlisten]   addr already in use
+2019-04-16T15:04:01.100-0600 E STORAGE  [initandlisten] Failed to set up sockets during startup.
+2019-04-16T15:04:01.100-0600 I CONTROL  [initandlisten] dbexit:  rc: 48
